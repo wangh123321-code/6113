@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>街机乒乓球 - 双人对战</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="960" height="600"></canvas>
+        
+        <div id="startMenu" class="menu">
+            <h1 class="title">🏓 街机乒乓球</h1>
+            <p class="subtitle">找回街机厅的快乐时光</p>
+            <div class="menu-buttons">
+                <button id="btnSingle" class="menu-btn">🎮 单人模式</button>
+                <button id="btnDouble" class="menu-btn">👥 双人对战</button>
+            </div>
+            <div class="controls-info">
+                <h3>操作说明</h3>
+                <div class="player-controls">
+                    <div class="control-group">
+                        <h4>玩家1 (左侧)</h4>
+                        <p><span class="key">W</span> / <span class="key">S</span> 上下移动</p>
+                        <p><span class="key">D</span> 扣杀</p>
+                    </div>
+                    <div class="control-group">
+                        <h4>玩家2 (右侧)</h4>
+                        <p><span class="key">↑</span> / <span class="key">↓</span> 上下移动</p>
+                        <p><span class="key">L</span> 扣杀</p>
+                    </div>
+                </div>
+                <p class="tip">💡 扣杀需在球处于高点且靠近球拍时触发</p>
+            </div>
+        </div>
+
+        <div id="pauseMenu" class="menu hidden">
+            <h2>⏸️ 游戏暂停</h2>
+            <div class="menu-buttons">
+                <button id="btnResume" class="menu-btn">继续游戏</button>
+                <button id="btnRestart" class="menu-btn">重新开始</button>
+                <button id="btnMainMenu" class="menu-btn">返回主菜单</button>
+            </div>
+        </div>
+
+        <div id="gameOverMenu" class="menu hidden">
+            <h2 id="winnerText">🎉 游戏结束</h2>
+            <p id="finalScore">最终比分: 0 - 0</p>
+            <div class="menu-buttons">
+                <button id="btnPlayAgain" class="menu-btn">再来一局</button>
+                <button id="btnBackToMenu" class="menu-btn">返回主菜单</button>
+            </div>
+        </div>
+
+        <div id="restCountdown" class="countdown hidden">
+            <div class="countdown-content">
+                <h2>局间休息</h2>
+                <p id="restScore">当前比分: 0 - 0</p>
+                <p class="countdown-number" id="countdownNum">5</p>
+            </div>
+        </div>
+
+        <div id="gameHUD" class="hud hidden">
+            <div class="score-display">
+                <div class="score-left">
+                    <span class="player-name">玩家1</span>
+                    <span class="score" id="score1">0</span>
+                </div>
+                <div class="sets-display">
+                    <span id="sets1">0</span>
+                    <span class="sets-label">局</span>
+                    <span id="sets2">0</span>
+                </div>
+                <div class="score-right">
+                    <span class="score" id="score2">0</span>
+                    <span class="player-name">玩家2</span>
+                </div>
+            </div>
+            <div class="rally-display" id="rallyDisplay">
+                <span class="rally-label">对拉</span>
+                <span class="rally-count" id="rallyCount">0</span>
+                <span class="rally-label">板</span>
+            </div>
+            <button id="btnPause" class="pause-btn">⏸️</button>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/ball.js"></script>
+    <script src="js/paddle.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
