@@ -18,12 +18,11 @@ const CONFIG = {
         RADIUS: 8,
         INITIAL_SPEED_X: 5,
         INITIAL_SPEED_Y: 3,
-        MAX_SPEED: 15,
+        MAX_SPEED: 14,
         SPEED_INCREMENT: 0.03,
         SMASH_SPEED_MULTIPLIER: 1.4,
         COLOR: '#ffffff',
-        GRAVITY: 0.15,
-        BOUNCE_DAMPING: 0.85
+        BOUNCE_DAMPING: 1.0
     },
 
     PADDLE: {
@@ -39,11 +38,12 @@ const CONFIG = {
     },
 
     SMASH: {
-        TRIGGER_DISTANCE: 80,
-        HIGH_BALL_THRESHOLD: 150,
-        DIRECTION_NARROW: 0.5,
-        ANIMATION_DURATION: 200,
-        COOLDOWN: 500
+        TRIGGER_DISTANCE_X: 120,
+        HIGH_BALL_ZONE: 0.5,
+        DIRECTION_NARROW: 0.4,
+        SMASH_SPEED_BONUS: 1.4,
+        ANIMATION_DURATION: 300,
+        COOLDOWN: 400
     },
 
     GAME: {

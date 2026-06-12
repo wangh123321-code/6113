@@ -30,7 +30,6 @@ class Ball {
             this.trail.pop();
         }
 
-        this.vy += CONFIG.BALL.GRAVITY;
         this.x += this.vx * this.speedMultiplier;
         this.y += this.vy * this.speedMultiplier;
 
@@ -49,8 +48,9 @@ class Ball {
     }
 
     isHighBall() {
-        const centerY = (CONFIG.TABLE.TOP + CONFIG.TABLE.BOTTOM) / 2;
-        return Math.abs(this.y - centerY) < CONFIG.SMASH.HIGH_BALL_THRESHOLD / 2;
+        const tableHeight = CONFIG.TABLE.BOTTOM - CONFIG.TABLE.TOP;
+        const highZoneBottom = CONFIG.TABLE.TOP + tableHeight * CONFIG.SMASH.HIGH_BALL_ZONE;
+        return this.y < highZoneBottom;
     }
 
     increaseSpeed() {
@@ -62,16 +62,12 @@ class Ball {
 
     smash(direction) {
         this.isSmash = true;
-        this.speedMultiplier *= CONFIG.BALL.SMASH_SPEED_MULTIPLIER;
-        this.vx = Math.abs(this.vx) * direction;
-        this.vy *= CONFIG.SMASH.DIRECTION_NARROW;
+        this.speedMultiplier *= CONFIG.SMASH.SMASH_SPEED_BONUS;
         
-        const maxBaseSpeed = CONFIG.BALL.MAX_SPEED / CONFIG.BALL.SMASH_SPEED_MULTIPLIER;
-        const baseSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-        if (baseSpeed > maxBaseSpeed) {
-            const ratio = maxBaseSpeed / baseSpeed;
-            this.vx *= ratio;
-            this.vy *= ratio;
+        const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        const maxSpeed = CONFIG.BALL.MAX_SPEED;
+        if (currentSpeed * this.speedMultiplier > maxSpeed) {
+            this.speedMultiplier = maxSpeed / currentSpeed;
         }
         
         setTimeout(() => {

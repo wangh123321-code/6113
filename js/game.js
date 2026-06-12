@@ -219,18 +219,24 @@ class Game {
         
         this.ball.lastHitBy = playerNum;
         this.rallyCount++;
-        this.ball.increaseSpeed();
 
         const hitY = collision.hitY;
-        const baseAngle = hitY * 0.8;
-        this.ball.vy = baseAngle * CONFIG.BALL.INITIAL_SPEED_Y * 2;
-        this.ball.vx = Math.abs(this.ball.vx) * direction;
+        const ballComingTowards = playerNum === 1 ? 
+            (this.ball.vx < 0) : (this.ball.vx > 0);
+        const isSmash = paddle.isSmashing && this.ball.isHighBall() && ballComingTowards;
         
-        const isSmash = paddle.isSmashing && this.ball.isHighBall();
         if (isSmash) {
+            const smashVy = hitY * CONFIG.BALL.INITIAL_SPEED_Y * CONFIG.SMASH.DIRECTION_NARROW;
+            this.ball.vy = smashVy;
+            this.ball.vx = Math.abs(this.ball.vx) * direction;
             this.ball.smash(direction);
             this.effects.triggerScreenShake(8);
             this.effects.triggerFlash('#ff6b00', 0.3);
+        } else {
+            this.ball.increaseSpeed();
+            const baseAngle = hitY * 0.9;
+            this.ball.vy = baseAngle * CONFIG.BALL.INITIAL_SPEED_Y * 2;
+            this.ball.vx = Math.abs(this.ball.vx) * direction;
         }
 
         this.effects.spawnHitParticles(

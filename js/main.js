@@ -2,6 +2,9 @@ const canvas = document.getElementById('gameCanvas');
 const game = new Game(canvas);
 const ui = new UIManager(game);
 
+window.game = game;
+window.ui = ui;
+
 let lastTime = 0;
 
 function gameLoop(currentTime) {

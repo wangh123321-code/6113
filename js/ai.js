@@ -64,11 +64,10 @@ class AIOpponent {
         let simVx = ball.vx * ball.speedMultiplier;
         let simVy = ball.vy * ball.speedMultiplier;
         
-        const maxIterations = 1000;
+        const maxIterations = 2000;
         let iterations = 0;
 
         while (iterations < maxIterations) {
-            simVy += CONFIG.BALL.GRAVITY;
             simX += simVx;
             simY += simVy;
 

@@ -56,10 +56,11 @@ class Paddle {
         if (this.isSmashing) return false;
 
         const dx = Math.abs(ball.x - this.x);
-        const dy = Math.abs(ball.y - this.y);
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const ballComingTowards = this.isPlayer1 ? (ball.vx < 0) : (ball.vx > 0);
 
-        return distance < CONFIG.SMASH.TRIGGER_DISTANCE && ball.isHighBall();
+        return dx < CONFIG.SMASH.TRIGGER_DISTANCE_X && 
+               ball.isHighBall() && 
+               ballComingTowards;
     }
 
     triggerSmash() {
