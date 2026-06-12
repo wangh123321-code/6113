@@ -80,47 +80,62 @@ class Ball {
     }
 
     draw(ctx) {
-        if (this.onFire && this.trail.length > 1) {
-            for (let i = 0; i < this.trail.length; i++) {
-                const t = this.trail[i];
-                const alpha = 1 - (i / this.trail.length);
-                const size = this.radius * (1 - i * 0.05);
-                const colorIndex = Math.floor(i / 3) % CONFIG.EFFECTS.FLAME_COLORS.length;
-                
-                ctx.beginPath();
-                ctx.arc(t.x, t.y, size, 0, Math.PI * 2);
-                ctx.fillStyle = CONFIG.EFFECTS.FLAME_COLORS[colorIndex];
-                ctx.globalAlpha = alpha * 0.6;
-                ctx.fill();
+        try {
+            if (this.onFire && this.trail.length > 1) {
+                for (let i = 0; i < this.trail.length; i++) {
+                    const t = this.trail[i];
+                    if (!t || !isFinite(t.x) || !isFinite(t.y)) continue;
+                    
+                    const alphaRatio = 1 - (i / this.trail.length);
+                    const alpha = Math.max(0, Math.min(1, alphaRatio));
+                    if (alpha <= 0.001) continue;
+                    
+                    const sizeRatio = 1 - i * 0.05;
+                    const size = Math.max(0.5, Math.abs(this.radius * sizeRatio));
+                    if (!isFinite(size) || size <= 0) continue;
+                    
+                    const colorIndex = Math.floor(i / 3) % CONFIG.EFFECTS.FLAME_COLORS.length;
+                    
+                    ctx.beginPath();
+                    safeArc(ctx, t.x, t.y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = CONFIG.EFFECTS.FLAME_COLORS[colorIndex];
+                    ctx.globalAlpha = alpha * 0.6;
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
             }
-            ctx.globalAlpha = 1;
-        }
 
-        const gradient = ctx.createRadialGradient(
-            this.x - 3, this.y - 3, 0,
-            this.x, this.y, this.radius
-        );
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(0.5, '#f0f0f0');
-        gradient.addColorStop(1, '#cccccc');
+            if (!isFinite(this.x) || !isFinite(this.y)) return;
+            const baseRadius = Math.max(0.5, Math.abs(this.radius));
 
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius + 2, 0, Math.PI * 2);
-        ctx.strokeStyle = this.isSmash ? '#ff6b00' : 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = this.isSmash ? 3 : 1;
-        ctx.stroke();
+            const gradient = ctx.createRadialGradient(
+                this.x - 3, this.y - 3, 0,
+                this.x, this.y, baseRadius
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(0.5, '#f0f0f0');
+            gradient.addColorStop(1, '#cccccc');
 
-        if (this.isSmash) {
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius + 8, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255, 107, 0, 0.4)';
-            ctx.lineWidth = 2;
+            safeArc(ctx, this.x, this.y, baseRadius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            ctx.beginPath();
+            safeArc(ctx, this.x, this.y, baseRadius + 2, 0, Math.PI * 2);
+            ctx.strokeStyle = this.isSmash ? '#ff6b00' : 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = this.isSmash ? 3 : 1;
             ctx.stroke();
+
+            if (this.isSmash) {
+                ctx.beginPath();
+                safeArc(ctx, this.x, this.y, baseRadius + 8, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255, 107, 0, 0.4)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        } catch (e) {
+            console.warn('Ball draw error:', e.message);
         }
     }
 }

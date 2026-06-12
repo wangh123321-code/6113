@@ -340,23 +340,37 @@ class Game {
     }
 
     draw() {
-        this.ctx.clearRect(0, 0, this.width, this.height);
+        try {
+            this.ctx.clearRect(0, 0, this.width, this.height);
 
-        this._drawTable();
+            this._drawTable();
 
-        if (this.gameState !== 'menu') {
-            this.paddle1.draw(this.ctx);
-            this.paddle2.draw(this.ctx);
-            
-            if (this.gameState !== 'rest') {
-                this.ball.draw(this.ctx);
+            if (this.gameState !== 'menu') {
+                this.paddle1.draw(this.ctx);
+                this.paddle2.draw(this.ctx);
+                
+                if (this.gameState !== 'rest') {
+                    this.ball.draw(this.ctx);
+                }
+                
+                this.effects.draw(this.ctx, this.width, this.height);
             }
-            
-            this.effects.draw(this.ctx, this.width, this.height);
-        }
 
-        if (this.gameState === 'rest') {
-            this._drawRestOverlay();
+            if (this.gameState === 'rest') {
+                this._drawRestOverlay();
+            }
+        } catch (e) {
+            console.error('Game draw error:', e.message);
+            try {
+                this.ctx.clearRect(0, 0, this.width, this.height);
+                this._drawTable();
+                if (this.gameState !== 'menu') {
+                    this.paddle1.draw(this.ctx);
+                    this.paddle2.draw(this.ctx);
+                }
+            } catch (e2) {
+                console.error('Fallback draw also failed:', e2.message);
+            }
         }
     }
 

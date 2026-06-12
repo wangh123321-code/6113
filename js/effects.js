@@ -1,3 +1,8 @@
+function safeArc(ctx, x, y, radius, startAngle, endAngle) {
+    const safeRadius = Math.max(0.1, Math.abs(radius));
+    ctx.arc(x, y, safeRadius, startAngle, endAngle);
+}
+
 class Particle {
     constructor(x, y, vx, vy, color, lifetime, size) {
         this.x = x;
@@ -5,9 +10,9 @@ class Particle {
         this.vx = vx;
         this.vy = vy;
         this.color = color;
-        this.lifetime = lifetime;
-        this.maxLifetime = lifetime;
-        this.size = size;
+        this.lifetime = Math.max(1, lifetime);
+        this.maxLifetime = Math.max(1, lifetime);
+        this.size = Math.max(0.5, size);
         this.active = true;
     }
 
@@ -15,21 +20,36 @@ class Particle {
         this.x += this.vx;
         this.y += this.vy;
         this.vy += 0.1;
-        this.lifetime--;
+        this.lifetime -= 1;
         
-        if (this.lifetime <= 0) {
+        if (this.lifetime <= 0.5) {
+            this.lifetime = 0;
             this.active = false;
         }
     }
 
     draw(ctx) {
-        const alpha = this.lifetime / this.maxLifetime;
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size * alpha, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
+        if (!this.active || this.lifetime <= 0.5 || this.size <= 0) return;
+        
+        try {
+            const ratio = this.lifetime / this.maxLifetime;
+            const alpha = Math.max(0, Math.min(1, ratio));
+            if (alpha <= 0.001) return;
+            
+            const radius = Math.max(0.5, Math.abs(this.size * alpha));
+            if (!isFinite(radius) || radius <= 0) return;
+            
+            if (!isFinite(this.x) || !isFinite(this.y)) return;
+            
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            safeArc(ctx, this.x, this.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        } catch (e) {
+            this.active = false;
+        }
     }
 }
 
@@ -52,7 +72,7 @@ class EffectsManager {
             const angle = (Math.random() - 0.5) * Math.PI + (direction > 0 ? 0 : Math.PI);
             const speed = 2 + Math.random() * 4;
             const color = colors[Math.floor(Math.random() * colors.length)];
-            const lifetime = CONFIG.EFFECTS.PARTICLE_LIFETIME + Math.random() * 20;
+            const lifetime = CONFIG.EFFECTS.PARTICLE_LIFETIME + Math.floor(Math.random() * 20);
             const size = 2 + Math.random() * 3;
 
             this.particles.push(new Particle(
@@ -78,7 +98,7 @@ class EffectsManager {
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed - 2,
                 color,
-                40 + Math.random() * 20,
+                40 + Math.floor(Math.random() * 20),
                 3 + Math.random() * 4
             ));
         }
@@ -102,8 +122,12 @@ class EffectsManager {
     }
 
     update() {
-        this.particles = this.particles.filter(p => p.active);
         this.particles.forEach(p => p.update());
+        this.particles = this.particles.filter(p => p.active);
+        
+        if (this.particles.length > 500) {
+            this.particles = this.particles.slice(-300);
+        }
 
         if (this.screenShake > 0) {
             this.screenShake *= 0.9;
@@ -123,19 +147,28 @@ class EffectsManager {
     draw(ctx, canvasWidth, canvasHeight) {
         ctx.save();
 
-        if (this.screenShake > 0) {
-            const shakeX = (Math.random() - 0.5) * this.screenShake * 2;
-            const shakeY = (Math.random() - 0.5) * this.screenShake * 2;
-            ctx.translate(shakeX, shakeY);
-        }
+        try {
+            if (this.screenShake > 0) {
+                const shakeX = (Math.random() - 0.5) * this.screenShake * 2;
+                const shakeY = (Math.random() - 0.5) * this.screenShake * 2;
+                ctx.translate(shakeX, shakeY);
+            }
 
-        this.particles.forEach(p => p.draw(ctx));
+            for (let i = 0; i < this.particles.length; i++) {
+                const p = this.particles[i];
+                if (p && p.active) {
+                    p.draw(ctx);
+                }
+            }
 
-        if (this.flashAlpha > 0 && this.flashColor) {
-            ctx.globalAlpha = this.flashAlpha;
-            ctx.fillStyle = this.flashColor;
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            ctx.globalAlpha = 1;
+            if (this.flashAlpha > 0 && this.flashColor) {
+                ctx.globalAlpha = Math.max(0, this.flashAlpha);
+                ctx.fillStyle = this.flashColor;
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                ctx.globalAlpha = 1;
+            }
+        } catch (e) {
+            console.warn('EffectsManager draw error:', e.message);
         }
 
         ctx.restore();
