@@ -22,24 +22,29 @@ class Game {
         this.effects = new EffectsManager();
 
         this.keys = {};
-        
+
         this.restTimer = 0;
         this.lastTime = 0;
-        
+
         this.servePlayer = 1;
-        
+
+        this.paddleCustomConfig = null;
+
         this._initGame();
         this._bindEvents();
     }
 
     _initGame() {
         const paddleY = (CONFIG.TABLE.TOP + CONFIG.TABLE.BOTTOM) / 2;
-        
-        this.paddle1 = new Paddle(CONFIG.TABLE.LEFT + 30, paddleY, true);
-        this.paddle2 = new Paddle(CONFIG.TABLE.RIGHT - 30, paddleY, false);
-        
+
+        this.paddle1 = new Paddle(CONFIG.TABLE.LEFT + 30, paddleY, true, this.paddleCustomConfig);
+        this.paddle2 = new Paddle(CONFIG.TABLE.RIGHT - 30, paddleY, false, null);
+
         this.ball = new Ball(CONFIG.TABLE.NET_X, paddleY);
-        
+        if (this.paddleCustomConfig) {
+            this.ball.applyCustomization(this.paddleCustomConfig.elasticity);
+        }
+
         this.ai = new AIOpponent(this.paddle2, false);
         this.ai.setDifficulty(0.5);
 
@@ -49,14 +54,25 @@ class Game {
         this.sets2 = 0;
         this.rallyCount = 0;
         this.servePlayer = 1;
-        
+
         this.effects.clear();
+    }
+
+    applyPaddleCustom(customConfig) {
+        this.paddleCustomConfig = customConfig;
+
+        if (this.paddle1) {
+            this.paddle1.applyCustomization(customConfig);
+        }
+        if (this.ball) {
+            this.ball.applyCustomization(customConfig.elasticity);
+        }
     }
 
     _bindEvents() {
         document.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
-            
+
             if (e.code === 'Escape') {
                 if (this.gameState === 'playing') {
                     this.pauseGame();
@@ -83,27 +99,27 @@ class Game {
         this.rallyCount = 0;
         this.gameState = 'playing';
         this._serveBall(this.servePlayer);
-        
+
         if (this.gameMode === 'single') {
             const totalDiff = this.sets1 - this.sets2;
             let baseDifficulty = 0.5 + totalDiff * 0.1;
             this.ai.setDifficulty(Math.max(0.2, Math.min(0.9, baseDifficulty)));
         }
-        
+
         this.effects.clear();
     }
 
     _serveBall(player) {
         const paddleY = (CONFIG.TABLE.TOP + CONFIG.TABLE.BOTTOM) / 2;
-        const startX = player === 1 ? 
-            CONFIG.TABLE.LEFT + 60 : 
+        const startX = player === 1 ?
+            CONFIG.TABLE.LEFT + 60 :
             CONFIG.TABLE.RIGHT - 60;
-        
+
         this.ball.reset(startX, paddleY, player === 1 ? 1 : -1);
         this.rallyCount = 0;
         this.ball.onFire = false;
         this.effects.deactivateRallyFlame();
-        
+
         this.paddle1.y = paddleY;
         this.paddle1.vy = 0;
         this.paddle2.y = paddleY;
@@ -216,33 +232,34 @@ class Game {
 
     _handlePaddleHit(paddle, collision, playerNum) {
         const direction = playerNum === 1 ? 1 : -1;
-        
+
         this.ball.lastHitBy = playerNum;
         this.rallyCount++;
 
         const hitY = collision.hitY;
-        const ballComingTowards = playerNum === 1 ? 
+        const ballComingTowards = playerNum === 1 ?
             (this.ball.vx < 0) : (this.ball.vx > 0);
         const isSmash = paddle.isSmashing && this.ball.isHighBall() && ballComingTowards;
-        
+
         if (isSmash) {
             const smashVy = hitY * CONFIG.BALL.INITIAL_SPEED_Y * CONFIG.SMASH.DIRECTION_NARROW;
             this.ball.vy = smashVy;
             this.ball.vx = Math.abs(this.ball.vx) * direction;
-            this.ball.smash(direction);
+            this.ball.smash(direction, paddle.effectiveSmashBonus);
             this.effects.triggerScreenShake(8);
             this.effects.triggerFlash('#ff6b00', 0.3);
         } else {
+            const deviation = paddle.getControlDeviation();
+            const baseAngle = hitY * 0.9 + deviation * (Math.random() - 0.5);
             this.ball.increaseSpeed();
-            const baseAngle = hitY * 0.9;
             this.ball.vy = baseAngle * CONFIG.BALL.INITIAL_SPEED_Y * 2;
             this.ball.vx = Math.abs(this.ball.vx) * direction;
         }
 
         this.effects.spawnHitParticles(
-            this.ball.x, 
-            this.ball.y, 
-            direction, 
+            this.ball.x,
+            this.ball.y,
+            direction,
             isSmash
         );
 
@@ -271,9 +288,9 @@ class Game {
                 this.height / 2,
                 scoringPlayer === 1
             );
-            
+
             this.effects.triggerScreenShake(5);
-            
+
             if (this._checkSetWin()) {
                 return;
             }
@@ -284,7 +301,7 @@ class Game {
                     this._serveBall(scoringPlayer);
                 }
             }, 1000);
-            
+
             this.gameState = 'scored';
             setTimeout(() => {
                 if (this.gameState === 'scored') {
@@ -311,7 +328,7 @@ class Game {
                 this.sets2++;
             }
 
-            if (this.sets1 >= CONFIG.GAME.SETS_TO_WIN || 
+            if (this.sets1 >= CONFIG.GAME.SETS_TO_WIN ||
                 this.sets2 >= CONFIG.GAME.SETS_TO_WIN) {
                 this._endGame(setWinner);
             } else {
@@ -330,7 +347,7 @@ class Game {
     _endGame(winner) {
         this.gameState = 'gameOver';
         this.winner = winner;
-        
+
         this.effects.triggerScreenShake(10);
         this.effects.triggerFlash(
             winner === 1 ? CONFIG.COLORS.PLAYER1 : CONFIG.COLORS.PLAYER2,
@@ -354,11 +371,11 @@ class Game {
             if (this.gameState !== 'menu') {
                 this.paddle1.draw(this.ctx);
                 this.paddle2.draw(this.ctx);
-                
+
                 if (this.gameState !== 'rest') {
                     this.ball.draw(this.ctx);
                 }
-                
+
                 this.effects.draw(this.ctx, this.width, this.height);
             }
 
@@ -382,12 +399,12 @@ class Game {
 
     _drawTable() {
         const { TABLE } = CONFIG;
-        
+
         const tableGradient = this.ctx.createLinearGradient(0, TABLE.TOP, 0, TABLE.BOTTOM);
         tableGradient.addColorStop(0, '#1d5a35');
         tableGradient.addColorStop(0.5, '#164a29');
         tableGradient.addColorStop(1, '#0d2e1a');
-        
+
         this.ctx.fillStyle = tableGradient;
         this.ctx.fillRect(TABLE.LEFT, TABLE.TOP, TABLE.RIGHT - TABLE.LEFT, TABLE.BOTTOM - TABLE.TOP);
 
@@ -411,7 +428,7 @@ class Game {
         borderGradient.addColorStop(0, '#8B6914');
         borderGradient.addColorStop(0.5, TABLE.BORDER_COLOR);
         borderGradient.addColorStop(1, '#8B6914');
-        
+
         this.ctx.strokeStyle = borderGradient;
         this.ctx.lineWidth = 8;
         this.ctx.strokeRect(TABLE.LEFT - 4, TABLE.TOP - 4, TABLE.RIGHT - TABLE.LEFT + 8, TABLE.BOTTOM - TABLE.TOP + 8);

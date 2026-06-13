@@ -18,7 +18,7 @@ const CONFIG = {
         RADIUS: 8,
         INITIAL_SPEED_X: 5,
         INITIAL_SPEED_Y: 3,
-        MAX_SPEED: 14,
+        MAX_SPEED: 15,
         SPEED_INCREMENT: 0.03,
         SMASH_SPEED_MULTIPLIER: 1.4,
         COLOR: '#ffffff',
@@ -44,6 +44,42 @@ const CONFIG = {
         SMASH_SPEED_BONUS: 1.4,
         ANIMATION_DURATION: 300,
         COOLDOWN: 400
+    },
+
+    PADDLE_CUSTOM: {
+        WEIGHT: {
+            MIN: 80,
+            MAX: 120,
+            DEFAULT: 100,
+            ACCEL_REDUCTION_RATIO: 0.3,
+            SMASH_BONUS_RATIO: 0.15
+        },
+        FACE_SIZE: {
+            MIN: 80,
+            MAX: 120,
+            DEFAULT: 100,
+            SPEED_REDUCTION_RATIO: 0.2
+        },
+        ELASTICITY: {
+            LOW: 0,
+            MEDIUM: 1,
+            HIGH: 2,
+            DEFAULT: 1,
+            SPEED_CAPS: [12, 15, 18],
+            LABELS: ['低', '中', '高'],
+            CONTROL_DEVIATION: [0, 0.12, 0.25]
+        },
+        MAX_PRESETS: 3,
+        RADAR: {
+            LABELS: ['速度', '控制', '力量', '旋转', '防守'],
+            FORMULAS: {
+                SPEED: { ELASTICITY: 50, WEIGHT_INV: 30, FACE_INV: 20 },
+                CONTROL: { ELASTICITY_INV: 45, FACE: 25, WEIGHT_INV: 30 },
+                POWER: { WEIGHT: 55, ELASTICITY: 45 },
+                SPIN: { ELASTICITY: 55, FACE: 45 },
+                DEFENSE: { FACE: 45, WEIGHT_INV: 30, ELASTICITY_INV: 25 }
+            }
+        }
     },
 
     GAME: {

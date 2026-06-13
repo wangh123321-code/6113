@@ -1,30 +1,100 @@
 class Paddle {
-    constructor(x, y, isPlayer1 = true) {
+    constructor(x, y, isPlayer1 = true, customConfig = null) {
         this.x = x;
         this.y = y;
-        this.width = CONFIG.PADDLE.WIDTH;
-        this.height = CONFIG.PADDLE.HEIGHT;
-        this.vy = 0;
         this.isPlayer1 = isPlayer1;
         this.color = isPlayer1 ? CONFIG.COLORS.PLAYER1 : CONFIG.COLORS.PLAYER2;
-        
+
         this.isSmashing = false;
         this.smashTime = 0;
         this.smashCooldown = 0;
         this.smashDirection = isPlayer1 ? 1 : -1;
+
+        this.customConfig = customConfig;
+        this.effectiveAcceleration = CONFIG.PADDLE.ACCELERATION;
+        this.effectiveMaxSpeed = CONFIG.PADDLE.MAX_SPEED;
+        this.effectiveSmashBonus = CONFIG.SMASH.SMASH_SPEED_BONUS;
+        this.effectiveWidth = CONFIG.PADDLE.WIDTH;
+        this.effectiveHeight = CONFIG.PADDLE.HEIGHT;
+        this.effectiveSmashWidth = CONFIG.PADDLE.SMASH_WIDTH;
+        this.effectiveSmashHeight = CONFIG.PADDLE.SMASH_HEIGHT;
+        this.elasticity = CONFIG.PADDLE_CUSTOM.ELASTICITY.DEFAULT;
+        this.vy = 0;
+
+        this.width = CONFIG.PADDLE.WIDTH;
+        this.height = CONFIG.PADDLE.HEIGHT;
+
+        this._applyCustomization(customConfig);
+    }
+
+    _applyCustomization(customConfig) {
+        if (!customConfig) {
+            this.effectiveAcceleration = CONFIG.PADDLE.ACCELERATION;
+            this.effectiveMaxSpeed = CONFIG.PADDLE.MAX_SPEED;
+            this.effectiveSmashBonus = CONFIG.SMASH.SMASH_SPEED_BONUS;
+            this.effectiveWidth = CONFIG.PADDLE.WIDTH;
+            this.effectiveHeight = CONFIG.PADDLE.HEIGHT;
+            this.effectiveSmashWidth = CONFIG.PADDLE.SMASH_WIDTH;
+            this.effectiveSmashHeight = CONFIG.PADDLE.SMASH_HEIGHT;
+            this.elasticity = CONFIG.PADDLE_CUSTOM.ELASTICITY.DEFAULT;
+            this.width = CONFIG.PADDLE.WIDTH;
+            this.height = CONFIG.PADDLE.HEIGHT;
+            return;
+        }
+
+        this.customConfig = customConfig;
+
+        const weightFactor = (customConfig.weight - CONFIG.PADDLE_CUSTOM.WEIGHT.MIN) /
+            (CONFIG.PADDLE_CUSTOM.WEIGHT.MAX - CONFIG.PADDLE_CUSTOM.WEIGHT.MIN);
+        const faceFactor = (customConfig.faceSize - CONFIG.PADDLE_CUSTOM.FACE_SIZE.MIN) /
+            (CONFIG.PADDLE_CUSTOM.FACE_SIZE.MAX - CONFIG.PADDLE_CUSTOM.FACE_SIZE.MIN);
+
+        const defaultWeightFactor = (CONFIG.PADDLE_CUSTOM.WEIGHT.DEFAULT - CONFIG.PADDLE_CUSTOM.WEIGHT.MIN) /
+            (CONFIG.PADDLE_CUSTOM.WEIGHT.MAX - CONFIG.PADDLE_CUSTOM.WEIGHT.MIN);
+
+        this.effectiveAcceleration = CONFIG.PADDLE.ACCELERATION *
+            (1 - CONFIG.PADDLE_CUSTOM.WEIGHT.ACCEL_REDUCTION_RATIO * weightFactor) /
+            (1 - CONFIG.PADDLE_CUSTOM.WEIGHT.ACCEL_REDUCTION_RATIO * defaultWeightFactor);
+
+        this.effectiveMaxSpeed = CONFIG.PADDLE.MAX_SPEED *
+            (1 - CONFIG.PADDLE_CUSTOM.FACE_SIZE.SPEED_REDUCTION_RATIO * faceFactor) /
+            (1 - CONFIG.PADDLE_CUSTOM.FACE_SIZE.SPEED_REDUCTION_RATIO * 0.5);
+
+        this.effectiveSmashBonus = CONFIG.SMASH.SMASH_SPEED_BONUS *
+            (1 + CONFIG.PADDLE_CUSTOM.WEIGHT.SMASH_BONUS_RATIO * weightFactor) /
+            (1 + CONFIG.PADDLE_CUSTOM.WEIGHT.SMASH_BONUS_RATIO * defaultWeightFactor);
+
+        const faceScale = customConfig.faceSize / 100;
+        this.effectiveWidth = CONFIG.PADDLE.WIDTH * faceScale;
+        this.effectiveHeight = CONFIG.PADDLE.HEIGHT * faceScale;
+        this.effectiveSmashWidth = CONFIG.PADDLE.SMASH_WIDTH * faceScale;
+        this.effectiveSmashHeight = CONFIG.PADDLE.SMASH_HEIGHT * faceScale;
+
+        this.width = this.effectiveWidth;
+        this.height = this.effectiveHeight;
+
+        this.elasticity = customConfig.elasticity;
+    }
+
+    applyCustomization(customConfig) {
+        this._applyCustomization(customConfig);
+    }
+
+    getControlDeviation() {
+        return CONFIG.PADDLE_CUSTOM.ELASTICITY.CONTROL_DEVIATION[this.elasticity] || 0;
     }
 
     moveUp() {
-        this.vy -= CONFIG.PADDLE.ACCELERATION;
-        if (this.vy < -CONFIG.PADDLE.MAX_SPEED) {
-            this.vy = -CONFIG.PADDLE.MAX_SPEED;
+        this.vy -= this.effectiveAcceleration;
+        if (this.vy < -this.effectiveMaxSpeed) {
+            this.vy = -this.effectiveMaxSpeed;
         }
     }
 
     moveDown() {
-        this.vy += CONFIG.PADDLE.ACCELERATION;
-        if (this.vy > CONFIG.PADDLE.MAX_SPEED) {
-            this.vy = CONFIG.PADDLE.MAX_SPEED;
+        this.vy += this.effectiveAcceleration;
+        if (this.vy > this.effectiveMaxSpeed) {
+            this.vy = this.effectiveMaxSpeed;
         }
     }
 
@@ -33,7 +103,7 @@ class Paddle {
         if (Math.abs(this.vy) < 0.01) {
             this.vy = 0;
         }
-        
+
         this.y += this.vy;
 
         const halfHeight = this.height / 2;
@@ -58,8 +128,8 @@ class Paddle {
         const dx = Math.abs(ball.x - this.x);
         const ballComingTowards = this.isPlayer1 ? (ball.vx < 0) : (ball.vx > 0);
 
-        return dx < CONFIG.SMASH.TRIGGER_DISTANCE_X && 
-               ball.isHighBall() && 
+        return dx < CONFIG.SMASH.TRIGGER_DISTANCE_X &&
+               ball.isHighBall() &&
                ballComingTowards;
     }
 
@@ -67,17 +137,20 @@ class Paddle {
         this.isSmashing = true;
         this.smashTime = CONFIG.SMASH.ANIMATION_DURATION;
         this.smashCooldown = CONFIG.SMASH.COOLDOWN;
-        
+
         setTimeout(() => {
             this.isSmashing = false;
         }, CONFIG.SMASH.ANIMATION_DURATION);
     }
 
     checkCollision(ball) {
-        const paddleLeft = this.x - this.width / 2;
-        const paddleRight = this.x + this.width / 2;
-        const paddleTop = this.y - this.height / 2;
-        const paddleBottom = this.y + this.height / 2;
+        const currentWidth = this.isSmashing ? this.effectiveSmashWidth : this.width;
+        const currentHeight = this.isSmashing ? this.effectiveSmashHeight : this.height;
+
+        const paddleLeft = this.x - currentWidth / 2;
+        const paddleRight = this.x + currentWidth / 2;
+        const paddleTop = this.y - currentHeight / 2;
+        const paddleBottom = this.y + currentHeight / 2;
 
         const closestX = Math.max(paddleLeft, Math.min(ball.x, paddleRight));
         const closestY = Math.max(paddleTop, Math.min(ball.y, paddleBottom));
@@ -89,7 +162,7 @@ class Paddle {
         if (distance < ball.radius) {
             return {
                 hit: true,
-                hitY: (ball.y - this.y) / (this.height / 2)
+                hitY: (ball.y - this.y) / (currentHeight / 2)
             };
         }
         return { hit: false, hitY: 0 };
@@ -97,9 +170,9 @@ class Paddle {
 
     draw(ctx) {
         ctx.save();
-        
-        const currentWidth = this.isSmashing ? CONFIG.PADDLE.SMASH_WIDTH : this.width;
-        const currentHeight = this.isSmashing ? CONFIG.PADDLE.SMASH_HEIGHT : this.height;
+
+        const currentWidth = this.isSmashing ? this.effectiveSmashWidth : this.width;
+        const currentHeight = this.isSmashing ? this.effectiveSmashHeight : this.height;
 
         if (this.isSmashing) {
             ctx.shadowColor = '#ff6b00';
@@ -110,7 +183,7 @@ class Paddle {
             this.x - currentWidth / 2, 0,
             this.x + currentWidth / 2, 0
         );
-        
+
         if (this.isPlayer1) {
             gradient.addColorStop(0, '#ff8888');
             gradient.addColorStop(0.5, this.color);

@@ -16,6 +16,7 @@
             <div class="menu-buttons">
                 <button id="btnSingle" class="menu-btn">🎮 单人模式</button>
                 <button id="btnDouble" class="menu-btn">👥 双人对战</button>
+                <button id="btnCustom" class="menu-btn">🔧 球拍定制</button>
             </div>
             <div class="controls-info">
                 <h3>操作说明</h3>
@@ -61,6 +62,63 @@
             </div>
         </div>
 
+        <div id="customMenu" class="menu hidden">
+            <h2 class="custom-title">🔧 球拍定制</h2>
+            <div class="custom-layout">
+                <div class="custom-panel">
+                    <div class="param-group">
+                        <label class="param-label">球拍重量</label>
+                        <div class="slider-row">
+                            <span class="param-min">80g</span>
+                            <input type="range" id="weightSlider" class="param-slider" min="80" max="120" value="100" step="1">
+                            <span class="param-max">120g</span>
+                        </div>
+                        <div class="param-current" id="weightValue">100g</div>
+                        <p class="param-hint">越重扣杀越强，但移动越慢</p>
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">拍面大小</label>
+                        <div class="slider-row">
+                            <span class="param-min">80%</span>
+                            <input type="range" id="faceSlider" class="param-slider" min="80" max="120" value="100" step="1">
+                            <span class="param-max">120%</span>
+                        </div>
+                        <div class="param-current" id="faceValue">100%</div>
+                        <p class="param-hint">拍面越大击球范围越广，但移动越慢</p>
+                    </div>
+                    <div class="param-group">
+                        <label class="param-label">胶皮弹性</label>
+                        <div class="elasticity-btns">
+                            <button class="elasticity-btn" data-value="0">低弹性</button>
+                            <button class="elasticity-btn active" data-value="1">中弹性</button>
+                            <button class="elasticity-btn" data-value="2">高弹性</button>
+                        </div>
+                        <p class="param-hint">弹性越高球速越快，但控制越难</p>
+                    </div>
+                    <div class="preset-section">
+                        <label class="param-label">预设方案</label>
+                        <div class="preset-row">
+                            <button class="preset-btn" data-index="0">空槽1</button>
+                            <button class="save-preset-btn" data-index="0">保存</button>
+                        </div>
+                        <div class="preset-row">
+                            <button class="preset-btn" data-index="1">空槽2</button>
+                            <button class="save-preset-btn" data-index="1">保存</button>
+                        </div>
+                        <div class="preset-row">
+                            <button class="preset-btn" data-index="2">空槽3</button>
+                            <button class="save-preset-btn" data-index="2">保存</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="radar-panel">
+                    <h3 class="radar-title">手感预览</h3>
+                    <canvas id="radarCanvas" width="280" height="280"></canvas>
+                </div>
+            </div>
+            <button id="btnCustomBack" class="menu-btn custom-back-btn">返回主菜单</button>
+        </div>
+
         <div id="gameHUD" class="hud hidden">
             <div class="score-display">
                 <div class="score-left">
@@ -92,6 +150,7 @@
     <script src="js/paddle.js?v=20260612001"></script>
     <script src="js/ai.js?v=20260612001"></script>
     <script src="js/game.js?v=20260612001"></script>
+    <script src="js/paddle_customizer.js?v=20260612001"></script>
     <script src="js/ui.js?v=20260612001"></script>
     <script src="js/main.js?v=20260612001"></script>
 </body>

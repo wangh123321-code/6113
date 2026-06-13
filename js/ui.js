@@ -1,6 +1,8 @@
 class UIManager {
-    constructor(game) {
+    constructor(game, customizer) {
         this.game = game;
+        this.customizer = customizer;
+        this.customMode = false;
         this._cacheElements();
         this._bindEvents();
     }
@@ -10,15 +12,16 @@ class UIManager {
         this.pauseMenu = document.getElementById('pauseMenu');
         this.gameOverMenu = document.getElementById('gameOverMenu');
         this.restCountdown = document.getElementById('restCountdown');
+        this.customMenu = document.getElementById('customMenu');
         this.gameHUD = document.getElementById('gameHUD');
-        
+
         this.score1El = document.getElementById('score1');
         this.score2El = document.getElementById('score2');
         this.sets1El = document.getElementById('sets1');
         this.sets2El = document.getElementById('sets2');
         this.rallyDisplay = document.getElementById('rallyDisplay');
         this.rallyCountEl = document.getElementById('rallyCount');
-        
+
         this.winnerText = document.getElementById('winnerText');
         this.finalScore = document.getElementById('finalScore');
         this.restScore = document.getElementById('restScore');
@@ -36,6 +39,18 @@ class UIManager {
             this._hideMenu(this.startMenu);
             this.game.startGame('double');
             this._showHUD();
+        });
+
+        document.getElementById('btnCustom').addEventListener('click', () => {
+            this.customMode = true;
+            this._hideMenu(this.startMenu);
+            this.customizer.show();
+        });
+
+        document.getElementById('btnCustomBack').addEventListener('click', () => {
+            this.customMode = false;
+            this.customizer.hide();
+            this._showMenu(this.startMenu);
         });
 
         document.getElementById('btnPause').addEventListener('click', () => {
@@ -90,11 +105,14 @@ class UIManager {
 
         switch (state.gameState) {
             case 'menu':
-                this._showMenu(this.startMenu);
+                if (!this.customMode) {
+                    this._showMenu(this.startMenu);
+                }
                 this._hideHUD();
                 break;
             case 'playing':
             case 'scored':
+                this.customMode = false;
                 this._hideAllMenus();
                 this._showHUD();
                 break;
@@ -123,6 +141,7 @@ class UIManager {
         this._hideMenu(this.pauseMenu);
         this._hideMenu(this.gameOverMenu);
         this._hideMenu(this.restCountdown);
+        this._hideMenu(this.customMenu);
     }
 
     _showHUD() {
@@ -144,7 +163,7 @@ class UIManager {
     _showGameOver(state) {
         this._hideAllMenus();
         this.gameOverMenu.classList.remove('hidden');
-        
+
         const winnerName = state.winner === 1 ? '玩家1' : '玩家2';
         this.winnerText.textContent = `🎉 ${winnerName} 获胜!`;
         this.finalScore.textContent = `最终比分: ${state.sets1} - ${state.sets2} (局) | 本局: ${state.score1} - ${state.score2}`;

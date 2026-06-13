@@ -10,6 +10,8 @@ class Ball {
         this.isSmash = false;
         this.trail = [];
         this.onFire = false;
+        this.elasticity = CONFIG.PADDLE_CUSTOM.ELASTICITY.DEFAULT;
+        this.effectiveMaxSpeed = CONFIG.PADDLE_CUSTOM.ELASTICITY.SPEED_CAPS[this.elasticity];
     }
 
     reset(x, y, direction = 1) {
@@ -22,6 +24,11 @@ class Ball {
         this.isSmash = false;
         this.trail = [];
         this.onFire = false;
+    }
+
+    applyCustomization(elasticity) {
+        this.elasticity = elasticity;
+        this.effectiveMaxSpeed = CONFIG.PADDLE_CUSTOM.ELASTICITY.SPEED_CAPS[elasticity];
     }
 
     update() {
@@ -54,22 +61,24 @@ class Ball {
     }
 
     increaseSpeed() {
+        const maxSpeed = this.effectiveMaxSpeed;
         this.speedMultiplier = Math.min(
             this.speedMultiplier * (1 + CONFIG.BALL.SPEED_INCREMENT),
-            CONFIG.BALL.MAX_SPEED / Math.sqrt(this.vx * this.vx + this.vy * this.vy)
+            maxSpeed / Math.sqrt(this.vx * this.vx + this.vy * this.vy)
         );
     }
 
-    smash(direction) {
+    smash(direction, smashBonus) {
         this.isSmash = true;
-        this.speedMultiplier *= CONFIG.SMASH.SMASH_SPEED_BONUS;
-        
+        const bonus = smashBonus || CONFIG.SMASH.SMASH_SPEED_BONUS;
+        this.speedMultiplier *= bonus;
+
         const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-        const maxSpeed = CONFIG.BALL.MAX_SPEED;
+        const maxSpeed = this.effectiveMaxSpeed;
         if (currentSpeed * this.speedMultiplier > maxSpeed) {
             this.speedMultiplier = maxSpeed / currentSpeed;
         }
-        
+
         setTimeout(() => {
             this.isSmash = false;
         }, 500);
@@ -81,17 +90,17 @@ class Ball {
                 for (let i = 0; i < this.trail.length; i++) {
                     const t = this.trail[i];
                     if (!t || !isFinite(t.x) || !isFinite(t.y)) continue;
-                    
+
                     const alphaRatio = 1 - (i / this.trail.length);
                     const alpha = Math.max(0, Math.min(1, alphaRatio));
                     if (alpha <= 0.001) continue;
-                    
+
                     const sizeRatio = 1 - i * 0.05;
                     const size = Math.max(0.5, Math.abs(this.radius * sizeRatio));
                     if (!isFinite(size) || size <= 0) continue;
-                    
+
                     const colorIndex = Math.floor(i / 3) % CONFIG.EFFECTS.FLAME_COLORS.length;
-                    
+
                     ctx.beginPath();
                     safeArc(ctx, t.x, t.y, size, 0, Math.PI * 2);
                     ctx.fillStyle = CONFIG.EFFECTS.FLAME_COLORS[colorIndex];
@@ -116,7 +125,7 @@ class Ball {
             safeArc(ctx, this.x, this.y, baseRadius, 0, Math.PI * 2);
             ctx.fillStyle = gradient;
             ctx.fill();
-            
+
             ctx.beginPath();
             safeArc(ctx, this.x, this.y, baseRadius + 2, 0, Math.PI * 2);
             ctx.strokeStyle = this.isSmash ? '#ff6b00' : 'rgba(255,255,255,0.3)';

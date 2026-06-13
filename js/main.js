@@ -1,9 +1,15 @@
 const canvas = document.getElementById('gameCanvas');
 const game = new Game(canvas);
-const ui = new UIManager(game);
+const customizer = new PaddleCustomizer(game);
+const ui = new UIManager(game, customizer);
 
 window.game = game;
 window.ui = ui;
+window.customizer = customizer;
+
+if (customizer.getCurrentConfig()) {
+    game.paddleCustomConfig = customizer.getCurrentConfig();
+}
 
 let lastTime = 0;
 
@@ -11,13 +17,13 @@ function gameLoop(currentTime) {
     if (lastTime === 0) {
         lastTime = currentTime;
     }
-    
+
     game.lastTime = lastTime;
-    
+
     game.update(currentTime);
     game.draw();
     ui.update();
-    
+
     lastTime = currentTime;
     requestAnimationFrame(gameLoop);
 }
